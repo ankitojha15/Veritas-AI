@@ -1,6 +1,4 @@
-# Step 4: Make search index using ONLY LangChain.
-# Dense = meaning search (FAISS). BM25 = word search.
-# Like making 2 book indexes: one by meaning, one by words.
+# Step 4: Two indexes - FAISS for meaning, BM25 for exact words.
 
 import os
 import pickle
@@ -14,7 +12,6 @@ load_dotenv()  # read .env file (for Huggingface + Groq keys)
 
 
 def get_embedding_model():
-    # This model turns text into numbers (understands meaning).
     name = config.DENSE_MODEL
     if "/" not in name:  # add full name if short
         name = "sentence-transformers/" + name
@@ -22,7 +19,6 @@ def get_embedding_model():
 
 
 def build_dense(child_docs):
-    # Make FAISS index from child docs and save it.
     model = get_embedding_model()
     shop = FAISS.from_documents(child_docs, model)
     os.makedirs(config.INDEX_FOLDER, exist_ok=True)
@@ -33,7 +29,6 @@ def build_dense(child_docs):
 
 
 def build_bm25(child_docs):
-    # Make BM25 index from child docs and save it.
     tool = BM25Retriever.from_documents(child_docs)
     tool.k = config.TOP_K
     os.makedirs(config.INDEX_FOLDER, exist_ok=True)
