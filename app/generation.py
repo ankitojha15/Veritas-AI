@@ -43,8 +43,8 @@ def rewrite_query(query):
 def build_context(docs):
     # Join docs into one text with page tags. Use big parent text.
     # Also removes same parent twice.
-    seen = []
-    parts = []
+    seen = [] #holds used parent IDs. It prevents duplicates.
+    parts = [] #holds text blocks
     for d in docs:
         pid = d.metadata.get("parent_id", d.metadata.get("chunk_id"))
         if pid in seen:
@@ -90,11 +90,11 @@ def find(state: State):
 def write(state: State):
     # Step 3: write answer from pages.
     if len(state["docs"]) == 0:
-        return {"answer": "I don't know from the PDFs.", "context": "", "no_answer": True, "citations": []}
+        return {"answer": "I didn't get it from the PDF.", "context": "", "no_answer": True, "citations": []}
     context = build_context(state["docs"])
     llm = get_llm()
     prompt = ChatPromptTemplate.from_messages([
-        ("system", "You answer only from context. Give short answer. Add [Page X] after each fact. If not in context, say: I don't know from the PDFs."),
+        ("system", "You answer only from context. Give short answer. Add [Page X] after each fact.Answer in bullet points. If not in context, say: I didn't get it from the PDF."),
         ("human", "Question: {q}\n\nContext:\n{ctx}"),
     ])
     chain = prompt | llm
@@ -106,7 +106,7 @@ def check(state: State):
     # Step 4: check pages + no-answer.
     if state.get("no_answer"):
         return {}
-    if "I don't know from the PDFs" in state["answer"]:
+    if "I didn't get it from the PDF." in state["answer"]:
         return {"no_answer": True, "citations": []}
     ok = verify_citations(state["answer"], state["docs"])
     cites = []
@@ -145,14 +145,13 @@ def answer_question(query):
         _graph = build_graph()
     out = _graph.invoke({"question": query})
     return {
-        "answer": out.get("answer", "I don't know from the PDFs."),
+        "answer": out.get("answer", "I didn't get it from the PDF."),
         "citations": out.get("citations", []),
         "no_answer": out.get("no_answer", False),
         "rewrite": out.get("rewrite", query),
     }
 
 
-# If we run this file, test helper parts (no API call)
 if __name__ == "__main__":
     from langchain_core.documents import Document
     fake = [Document(page_content="Cats like milk", metadata={"page": 1, "source": "a.pdf", "chunk_id": "c0", "parent_id": "p0", "parent_text": "Cats like milk"})]
