@@ -1,4 +1,3 @@
-# Step 2: Read PDFs using ONLY LangChain.
 # Like asking LangChain to open a book and copy each page.
 
 import os
@@ -8,13 +7,13 @@ from app import config
 
 
 def load_one_pdf(pdf_path):
-    # Load 1 PDF with LangChain.
+    # Load 1 PDF
     # Returns a list of Documents.
     # Each Document has: page_content (text) + metadata (page, source)
     loader = PyMuPDFLoader(pdf_path)  # LangChain book opener
     docs = loader.load()  # read all pages
 
-    # Fix page number: LangChain starts from 0, we want from 1
+    # Fix page number:starts from 0, we want from 1
     for d in docs:
         d.metadata["page"] = d.metadata["page"] + 1
         d.metadata["source"] = os.path.basename(pdf_path)
@@ -40,7 +39,7 @@ def load_all_pdfs():
             all_docs = all_docs + docs
             print(f"Read {f}: {len(docs)} pages")
 
-    # Save simple copy as json (so we can see it)
+    # Save simple copy as json
     os.makedirs(config.PROCESSED_FOLDER, exist_ok=True)
     out_path = os.path.join(config.PROCESSED_FOLDER, "all_pages.json")
     simple_list = []
