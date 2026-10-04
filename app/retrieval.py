@@ -1,7 +1,5 @@
-# Step 5: Find best pieces using ONLY LangChain.
 # Hybrid = EnsembleRetriever mixes dense (meaning) + BM25 (words) with RRF.
 # Rerank = ask a smart checker to pick the best.
-# Like asking 2 friends, mixing answers, then picking best.
 
 import os
 import pickle
@@ -32,14 +30,14 @@ def load_bm25():
 
 
 def hybrid_search(query, dense_shop, bm25_tool):
-    # Mix dense + BM25 with LangChain RRF. c=60 is the RRF magic number.
+    # Mix dense + BM25 with LangChain RRF. c=60 is the RRF stable number.
     n = config.TOP_K * 2
     dense_box = dense_shop.as_retriever(search_kwargs={"k": n})
     team = EnsembleRetriever(retrievers=[dense_box, bm25_tool], weights=[0.5, 0.5], c=60)
     return team.invoke(query)
 
 
-_checker = None  # keep model in memory so we load only once
+_checker = None  # keep the judge in memory so we load only once
 
 
 def rerank(query, docs, top_k=5):
