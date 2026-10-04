@@ -1,6 +1,4 @@
-# Step 3: Cut text into small pieces using ONLY LangChain.
-# Parent = big piece (for reading). Child = small piece (for searching).
-# Like cutting a big cake into small slices.
+# Parent = big piece (for context). Child = small piece (for searching).
 
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_core.documents import Document
@@ -82,7 +80,5 @@ def chunk_and_save():
     print(f"Saved to {out_path}")
     return parents, childs
 
-
-# If we run this file, cut and save
 if __name__ == "__main__":
     chunk_and_save()
