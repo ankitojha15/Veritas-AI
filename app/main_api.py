@@ -4,8 +4,16 @@ from fastapi import FastAPI
 from pydantic import BaseModel
 from app.indexing import build_all
 from app.generation import answer_question
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI(title="VeritasAI")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_headers=["*"],
+    allow_methods=["*"],
+)
 
 
 class AskIn(BaseModel):
