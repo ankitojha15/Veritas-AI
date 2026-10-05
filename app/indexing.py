@@ -57,12 +57,11 @@ def build_all():
                     os.remove(p)
             except Exception:
                 pass
-        return None, None
-
+        return {"dense": None, "bm25": None, "pages": 0, "chunks": 0}
     dense = build_dense(childs)
     bm25 = build_bm25(childs)
     print("Both indexes done.")
-    return dense, bm25
+    return {"dense":dense, "bm25":bm25 , "pages":len(parents), "chunks":len(childs)}
 
 
 # If we run this file, build both indexes
