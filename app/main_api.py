@@ -1,13 +1,11 @@
-# Step 8: API using FastAPI + LangChain.
-# Like a waiter: takes question, gives answer.
-# Run with: uvicorn app.main_api:app --reload
+# takes question, gives answer.
 
 from fastapi import FastAPI
 from pydantic import BaseModel
 from app.indexing import build_all
 from app.generation import answer_question
 
-app = FastAPI(title="KnowledgeBaseAI")
+app = FastAPI(title="VeritasAI")
 
 
 class AskIn(BaseModel):
@@ -19,10 +17,15 @@ class AskOut(BaseModel):
     citations: list = []
     no_answer: bool = False
 
+class IndexOut(BaseModel):
+    done: bool = True
+    pages: int = 0
+    chunks: int = 0
+
 
 @app.get("/")
 def home():
-    return {"msg": "KnowledgeBaseAI is running. Use /ask to ask."}
+    return {"msg": "VeritasAI is running. Use /ask to ask."}
 
 
 @app.get("/health")
@@ -30,11 +33,11 @@ def health():
     return {"ok": True}
 
 
-@app.post("/index")
+@app.post("/index" , response_model=IndexOut)
 def make_index():
     # Read PDFs and make search files.
-    build_all()
-    return {"done": True}
+    result = build_all()
+    return {"done": True,"pages":result["pages"],"chunks":result["chunks"]}
 
 
 @app.post("/ask", response_model=AskOut)
