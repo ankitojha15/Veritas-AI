@@ -1,7 +1,7 @@
 # This file holds ALL settings in one place.
 # Think of it like a remote control for our project.
 # If you want to change a model, just change it here.
-
+import os
 # --- Folders ---
 PDF_FOLDER = "data/pdfs"          # put your PDF files here
 PROCESSED_FOLDER = "data/processed"  # we save clean text here
@@ -24,3 +24,9 @@ LLM_MODEL = "openai/gpt-oss-120b"
 
 # --- Search settings ---
 TOP_K = 5  # how many pieces to pick for final answer
+
+QDRANT_URL = os.getenv("QDRANT_URL", "")
+QDRANT_API_KEY = os.getenv("QDRANT_API_KEY", "")
+HF_TOKEN = os.getenv("HF_TOKEN", "")
+QDRANT_COLLECTION = "veritas"
+DENSE_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
