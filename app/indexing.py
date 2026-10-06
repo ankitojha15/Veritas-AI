@@ -1,31 +1,50 @@
-# Step 4: Two indexes - FAISS for meaning, BM25 for exact words.
+# Step 4: Two indexes - Qdrant for meaning, BM25 for exact words.
 
 import os
 import pickle
 from dotenv import load_dotenv
-from langchain_community.embeddings import HuggingFaceEmbeddings
-from langchain_community.vectorstores import FAISS
+from qdrant_client import QdrantClient
+from qdrant_client.models import Distance, VectorParams, PointStruct
+from langchain_huggingface import HuggingFaceEndpointEmbeddings
 from langchain_community.retrievers import BM25Retriever
 from app import config
 
-load_dotenv()  # read .env file (for Huggingface + Groq keys)
+load_dotenv()
 
 
 def get_embedding_model():
-    name = config.DENSE_MODEL
-    if "/" not in name:  # add full name if short
-        name = "sentence-transformers/" + name
-    return HuggingFaceEmbeddings(model_name=name)
+    return HuggingFaceEndpointEmbeddings(
+        model=config.DENSE_MODEL,
+        huggingfacehub_api_token=config.HF_TOKEN
+    )
 
 
 def build_dense(child_docs):
     model = get_embedding_model()
-    shop = FAISS.from_documents(child_docs, model)
-    os.makedirs(config.INDEX_FOLDER, exist_ok=True)
-    path = os.path.join(config.INDEX_FOLDER, "faiss")
-    shop.save_local(path)
-    print(f"Saved dense index to {path}")
-    return shop
+    client = QdrantClient(url=config.QDRANT_URL, api_key=config.QDRANT_API_KEY)
+    client.recreate_collection(
+        collection_name=config.QDRANT_COLLECTION,
+        vectors_config=VectorParams(size=384, distance=Distance.COSINE)
+    )
+    texts = [c.page_content for c in child_docs]
+    vectors = model.embed_documents(texts)
+    points = []
+    for i, (c, v) in enumerate(zip(child_docs, vectors)):
+        points.append(PointStruct(
+            id=i,
+            vector=v,
+            payload={
+                "text": c.page_content,
+                "page": c.metadata["page"],
+                "source": c.metadata["source"],
+                "parent_text": c.metadata.get("parent_text", c.page_content),
+                "parent_id": c.metadata.get("parent_id", ""),
+                "chunk_id": c.metadata.get("chunk_id", f"child-{i}")
+            }
+        ))
+    client.upsert(collection_name=config.QDRANT_COLLECTION, points=points)
+    print(f"Saved dense to Qdrant {config.QDRANT_COLLECTION} count {len(points)}")
+    return client
 
 
 def build_bm25(child_docs):
@@ -40,20 +59,20 @@ def build_bm25(child_docs):
 
 
 def build_all():
-    # Full job: cut text, then make both indexes.
-    # If new PDF has 0 pages, wipe old index so we never answer from old PDF.
     import shutil
     from app.chunking import chunk_and_save
 
     parents, childs = chunk_and_save()
     if len(childs) == 0:
         print("No chunks. Add PDFs first.")
-        for p in [os.path.join(config.INDEX_FOLDER, "faiss"),
-                  os.path.join(config.INDEX_FOLDER, "bm25.pkl")]:
+        try:
+            client = QdrantClient(url=config.QDRANT_URL, api_key=config.QDRANT_API_KEY)
+            client.delete_collection(collection_name=config.QDRANT_COLLECTION)
+        except Exception:
+            pass
+        for p in [os.path.join(config.INDEX_FOLDER, "bm25.pkl")]:
             try:
-                if os.path.isdir(p):
-                    shutil.rmtree(p)
-                elif os.path.isfile(p):
+                if os.path.isfile(p):
                     os.remove(p)
             except Exception:
                 pass
@@ -61,9 +80,8 @@ def build_all():
     dense = build_dense(childs)
     bm25 = build_bm25(childs)
     print("Both indexes done.")
-    return {"dense":dense, "bm25":bm25 , "pages":len(parents), "chunks":len(childs)}
+    return {"dense": dense, "bm25": bm25, "pages": len(parents), "chunks": len(childs)}
 
 
-# If we run this file, build both indexes
 if __name__ == "__main__":
     build_all()
