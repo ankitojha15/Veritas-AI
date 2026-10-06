@@ -15,7 +15,7 @@ OVERLAP = 50         # overlap so we don't lose meaning
 
 # --- Models (all free and small) ---
 # Dense model = understands meaning
-DENSE_MODEL = "all-MiniLM-L6-v2"
+DENSE_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
 # Rerank model = picks best answer
 RERANK_MODEL = "cross-encoder/ms-marco-MiniLM-L-6-v2"
 # LLM model = writes final answer (Groq is free)
@@ -29,4 +29,3 @@ QDRANT_URL = os.getenv("QDRANT_URL", "")
 QDRANT_API_KEY = os.getenv("QDRANT_API_KEY", "")
 HF_TOKEN = os.getenv("HF_TOKEN", "")
 QDRANT_COLLECTION = "veritas"
-DENSE_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
