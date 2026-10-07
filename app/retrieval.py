@@ -13,12 +13,21 @@ from app.indexing import get_embedding_model
 load_dotenv()
 
 
+from qdrant_client import QdrantClient
+from langchain_qdrant import QdrantVectorStore
+from langchain_huggingface import HuggingFaceEndpointEmbeddings
+from app import config
+from app.indexing import get_embedding_model
+
 def load_dense():
-    # Load saved FAISS index
     model = get_embedding_model()
-    path = os.path.join(config.INDEX_FOLDER, "faiss")
-    shop = FAISS.load_local(path, model, allow_dangerous_deserialization=True)
-    return shop
+    client = QdrantClient(url=config.QDRANT_URL, api_key=config.QDRANT_API_KEY)
+    store = QdrantVectorStore(
+        client=client,
+        collection_name=config.QDRANT_COLLECTION,
+        embedding=model
+    )
+    return store
 
 
 def load_bm25():
