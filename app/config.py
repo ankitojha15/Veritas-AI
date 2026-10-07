@@ -1,6 +1,8 @@
 # This file holds ALL settings in one place.
 # Think of it like a remote control for our project.
 # If you want to change a model, just change it here.
+from dotenv import load_dotenv
+load_dotenv()
 import os
 # --- Folders ---
 PDF_FOLDER = "data/pdfs"          # put your PDF files here
