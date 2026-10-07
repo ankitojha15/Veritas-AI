@@ -1,6 +1,5 @@
 # Step 4: Two indexes - Qdrant for meaning, BM25 for exact words.
 
-import os
 import pickle
 from dotenv import load_dotenv
 from qdrant_client import QdrantClient
@@ -10,6 +9,8 @@ from langchain_community.retrievers import BM25Retriever
 from app import config
 
 load_dotenv()
+
+import os
 
 
 def get_embedding_model():
@@ -27,7 +28,20 @@ def build_dense(child_docs):
         vectors_config=VectorParams(size=384, distance=Distance.COSINE)
     )
     texts = [c.page_content for c in child_docs]
-    vectors = model.embed_documents(texts)
+    import time
+    vectors = []
+    for i in range(0, len(texts), 32):
+        batch = texts[i:i+32]
+        for attempt in range(3):
+            try:
+                vectors.extend(model.embed_documents(batch))
+                break
+            except Exception:
+                time.sleep(2)
+                if attempt == 2:
+                    raise
+        print(f"Embedded {min(i+32, len(texts))}/{len(texts)}")
+        time.sleep(1)
     points = []
     for i, (c, v) in enumerate(zip(child_docs, vectors)):
         points.append(PointStruct(
