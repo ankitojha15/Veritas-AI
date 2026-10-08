@@ -5,6 +5,7 @@ import streamlit as st
 import os
 import sys
 import time
+import requests
 
 # Make "app" work both locally and on Streamlit Cloud
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
@@ -20,11 +21,11 @@ def stream_words(text):
         time.sleep(0.02)
 
 # Look
-st.set_page_config(page_title="KnowledgeBaseAI", page_icon="📚", layout="wide")
+st.set_page_config(page_title="VeritasAI", page_icon="📚", layout="wide")
 
 # Left side: steps (stays still)
 with st.sidebar:
-    st.title("📚 KnowledgeBaseAI")
+    st.title("📚 VeritasAI")
     st.write("**1. Upload PDFs**")
     files = st.file_uploader("Choose PDFs", type=["pdf"], accept_multiple_files=True)
     if files:
@@ -45,7 +46,8 @@ with st.sidebar:
     st.write("**2. Build Index**")
     if st.button("🔨 Build Index", use_container_width=True):
         with st.spinner("Reading..."):
-            parents, childs = build_all()
+            r = requests.post(f"{config.API_URL}/index", timeout=300)
+            data = r.json()
         st.session_state.chats = []
         if not childs:
             st.error("No text found in this PDF. It may be scanned images. Try a text PDF.")
